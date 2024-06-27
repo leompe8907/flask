@@ -1,0 +1,7 @@
+# Ignorar archivo env
+/env
+
+# Ignorar archivo de configuración de IDE
+/.idea
+
+*.pyc
