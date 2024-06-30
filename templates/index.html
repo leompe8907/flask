@@ -26,7 +26,7 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <small class="text-muted">{{ publicacion.date.strftime('%d-%m-%Y %H:%M') }}</small>
+                        
                         {% if current_user.is_authenticated and current_user.id == publicacion.autor_id %}
                             <div>
                                 <a href="{{ url_for('main.editar_publicacion', id=publicacion.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
@@ -35,7 +35,7 @@
                         {% endif %}
                     </div>
                     <p class="card-text">{{ publicacion.contenido }}</p>
-                    <p class="card-text"><small class="text-muted">Por {{ publicacion.autor.nombre }}</small></p>
+                    <p class="card-text"><small class="text-muted">Por {{ publicacion.autor.nombre }}</small> - <small class="text-muted">{{ publicacion.date.strftime('%d-%m-%Y %H:%M') }}</small></p>
 
                     {% if current_user.is_authenticated %}
                         <form method="POST" action="{{ url_for('main.comentar', publicacion_id=publicacion.id) }}">
