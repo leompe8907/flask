@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_user, logout_user, current_user, login_required, LoginManager
-from app import db, login
-from app import login
+from flask_login import login_user, logout_user, current_user, login_required
+from app import db
 from app.forms import RegistrationForm, LoginForm, PublicacionForm, ComentarioForm
-from app.models import Usuarios, Publicaciones, Comentarios
+from app.models import Usuarios, Publicaciones
 
 main = Blueprint('main', __name__)
 
@@ -21,8 +20,6 @@ def register():
         flash('Congratulations, you are now a registered user!', 'success')
         return redirect(url_for('main.login'))
     return render_template('register.html', form=form)
-
-login = LoginManager()
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
@@ -50,13 +47,42 @@ def logout():
 def index():
     form = PublicacionForm()
     if current_user.is_authenticated and form.validate_on_submit():
-        publicacion = Publicaciones(contenido=form.contenido.data, autor=current_user)
+        publicacion = Publicaciones(contenido=form.contenido.data, autor=current_user, tipo='publicacion')
         db.session.add(publicacion)
         db.session.commit()
         flash('Tu publicación ha sido creada!', 'success')
         return redirect(url_for('main.index'))
-    publicaciones = Publicaciones.query.order_by(Publicaciones.date.desc()).all()
+    publicaciones = Publicaciones.query.filter_by(tipo='publicacion').order_by(Publicaciones.date.desc()).all()
     return render_template('index.html', form=form, publicaciones=publicaciones)
+
+@main.route('/comentar/<int:publicacion_id>', methods=['POST'])
+@login_required
+def comentar(publicacion_id):
+    form = ComentarioForm()
+    if form.validate_on_submit():
+        comentario = Publicaciones(contenido=form.contenido.data, autor=current_user, tipo='comentario', publicacion_id=publicacion_id)
+        db.session.add(comentario)
+        db.session.commit()
+        flash('Tu comentario ha sido publicado!', 'success')
+    return redirect(url_for('main.index'))
+
+@main.route('/eliminar/<int:id>')
+@login_required
+def eliminar_publicacion(id):
+    publicacion = Publicaciones.query.get_or_404(id)
+    if current_user.id != publicacion.autor_id:
+        flash('No tienes permiso para eliminar esta publicación.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    # Eliminar todos los comentarios asociados a la publicación
+    if publicacion.tipo == 'publicacion':
+        for comentario in publicacion.comentarios:
+            db.session.delete(comentario)
+    
+    db.session.delete(publicacion)
+    db.session.commit()
+    flash('Tu publicación ha sido eliminada!', 'success')
+    return redirect(url_for('main.index'))
 
 @main.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -65,6 +91,7 @@ def editar_publicacion(id):
     if current_user.id != publicacion.autor_id:
         flash('No tienes permiso para editar esta publicación.', 'danger')
         return redirect(url_for('main.index'))
+    
     form = PublicacionForm()
     if form.validate_on_submit():
         publicacion.contenido = form.contenido.data
@@ -74,15 +101,3 @@ def editar_publicacion(id):
     elif request.method == 'GET':
         form.contenido.data = publicacion.contenido
     return render_template('editar_publicacion.html', form=form)
-
-@main.route('/eliminar/<int:id>')
-@login_required
-def eliminar_publicacion(id):
-    publicacion = Publicaciones.query.get_or_404(id)
-    if current_user.id != publicacion.autor_id:
-        flash('No tienes permiso para eliminar esta publicación.', 'danger')
-        return redirect(url_for('main.index'))
-    db.session.delete(publicacion)
-    db.session.commit()
-    flash('Tu publicación ha sido eliminada!', 'success')
-    return redirect(url_for('main.index'))

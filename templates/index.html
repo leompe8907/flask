@@ -9,7 +9,7 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title">Crear nueva publicación</h5>
-                    <form method="POST" action="{{ url_for('main.crear_publicacion') }}">
+                    <form method="POST" action="{{ url_for('main.index') }}">
                         {{ form.hidden_tag() }}
                         <div class="mb-3">
                             {{ form.contenido.label(class="form-label") }}
@@ -36,6 +36,27 @@
                     </div>
                     <p class="card-text">{{ publicacion.contenido }}</p>
                     <p class="card-text"><small class="text-muted">Por {{ publicacion.autor.nombre }}</small></p>
+
+                    {% if current_user.is_authenticated %}
+                        <form method="POST" action="{{ url_for('main.comentar', publicacion_id=publicacion.id) }}">
+                            {{ form.hidden_tag() }}
+                            <div class="mb-3">
+                                {{ form.contenido.label(class="form-label") }}
+                                {{ form.contenido(class="form-control", rows=2) }}
+                            </div>
+                            {{ form.submit(class="btn btn-primary btn-sm") }}
+                        </form>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <h6>Comentarios</h6>
+                        {% for comentario in publicacion.comentarios %}
+                            <div class="border p-2 mb-2">
+                                <p class="mb-1">{{ comentario.contenido }}</p>
+                                <small class="text-muted">Por {{ comentario.autor.nombre }} el {{ comentario.date.strftime('%d-%m-%Y %H:%M') }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         {% else %}
