@@ -101,34 +101,3 @@ def editar_publicacion(id):
     elif request.method == 'GET':
         form.contenido.data = publicacion.contenido
     return render_template('editar_publicacion.html', form=form)
-
-@main.route('/editar_comentario/<int:id>', methods=['GET', 'POST'])
-@login_required
-def editar_comentario(id):
-    comentario = Publicaciones.query.get_or_404(id)
-    if current_user.id != comentario.autor_id:
-        flash('No tienes permiso para editar este comentario.', 'danger')
-        return redirect(url_for('main.index'))
-    
-    form = ComentarioForm()
-    if form.validate_on_submit():
-        comentario.contenido = form.contenido.data
-        db.session.commit()
-        flash('Tu comentario ha sido actualizado!', 'success')
-        return redirect(url_for('main.index'))
-    elif request.method == 'GET':
-        form.contenido.data = comentario.contenido
-    return render_template('editar_comentario.html', form=form)
-
-@main.route('/eliminar_comentario/<int:id>')
-@login_required
-def eliminar_comentario(id):
-    comentario = Publicaciones.query.get_or_404(id)
-    if current_user.id != comentario.autor_id:
-        flash('No tienes permiso para eliminar este comentario.', 'danger')
-        return redirect(url_for('main.index'))
-    
-    db.session.delete(comentario)
-    db.session.commit()
-    flash('Tu comentario ha sido eliminado!', 'success')
-    return redirect(url_for('main.index'))
