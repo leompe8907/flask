@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Publicaciones{% endblock %}
+
+{% block content %}
+    <h1 class="my-4">Publicaciones</h1>
+    <div class="list-group">
+        {% for publicacion in publicaciones %}
+            <a href="#" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">{{ publicacion.titulo }}</h5>
+                <p class="mb-1">{{ publicacion.contenido }}</p>
+                <small>Autor: {{ publicacion.autor.nombre }} | Fecha: {{ publicacion.date.strftime('%Y-%m-%d') }}</small>
+            </a>
+        {% endfor %}
+    </div>
+{% endblock %}

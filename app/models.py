@@ -1,14 +1,15 @@
 from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 
-class Usuarios(db.Model):
+class Usuarios(UserMixin, db.Model):
   __tablename__ = "usuarios"
-  id = db.Column(db.Integer, primary_key=True, autoincrement=True)  # ID de usuario, clave primaria, autoincrementable
-  email = db.Column(db.String(80), nullable=False, unique=True)  # Email del usuario, debe ser único y no nulo
-  password = db.Column(db.String(10), nullable=False)  # Contraseña del usuario, no nula
-  nombre = db.Column(db.String(50), nullable=False)  # Nombre del usuario, no nulo
-  created = db.Column(db.DateTime, default=datetime.now())  # Fecha de creación, con valor por defecto la fecha y hora actual
+  id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+  email = db.Column(db.String(80), nullable=False, unique=True)
+  password = db.Column(db.String(200), nullable=False)
+  nombre = db.Column(db.String(50), nullable=False)
+  created = db.Column(db.DateTime, default=datetime.now) 
   def set_password(self, password):
     self.password = generate_password_hash(password)
 
