@@ -2,12 +2,14 @@ from flask import Flask
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 
 db = SQLAlchemy()
 login = LoginManager()
 
 def create_app():
     app = Flask(__name__, template_folder='../templates', static_folder="../static")
+    csrf = CSRFProtect(app)
     app.config.from_object(Config)
 
     db.init_app(app)

@@ -8,16 +8,42 @@
         <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Editar Publicación</h5>
-                <form method="POST" action="">
+                <form id="editar-form" action="{{ url_for('main.editar_publicacion', id=publicacion.id) }}">
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.contenido.label(class="form-label") }}
                         {{ form.contenido(class="form-control", rows=3) }}
                     </div>
-                    {{ form.submit(class="btn btn-primary") }}
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancelar</a>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById('editar-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var form = event.target;
+        var formData = new FormData(form);
+        fetch(form.action, {
+            method: 'PUT',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}', // Incluir el token CSRF si es necesario
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.success);
+                window.location.href = "{{ url_for('main.index') }}"; // Redirige al índice
+            } else if (data.error) {
+                alert(data.error);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+</script>
 {% endblock %}

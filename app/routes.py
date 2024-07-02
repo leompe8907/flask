@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
 from app import db
 from app.forms import RegistrationForm, LoginForm, PublicacionForm, ComentarioForm
 from app.models import Usuarios, Publicaciones
+from sqlalchemy.orm import session
 
 main = Blueprint('main', __name__)
 
@@ -63,28 +64,33 @@ def comentar(publicacion_id):
         comentario = Publicaciones(contenido=form.contenido.data, autor=current_user, tipo='comentario', publicacion_id=publicacion_id)
         db.session.add(comentario)
         db.session.commit()
-        flash('Tu comentario ha sido publicado!', 'success')
-    return redirect(url_for('main.index'))
+        return jsonify({"success": "Tu comentario ha sido publicado"}), 200
+    return jsonify({"error": "Error al validar el formulario"}), 400
 
-@main.route('/eliminar/<int:id>')
+@main.route('/eliminar/<int:id>', methods=['DELETE'])
 @login_required
 def eliminar_publicacion(id):
     publicacion = Publicaciones.query.get_or_404(id)
     if current_user.id != publicacion.autor_id:
-        flash('No tienes permiso para eliminar esta publicación.', 'danger')
-        return redirect(url_for('main.index'))
+        return jsonify({'error': 'No tienes permiso para eliminar esta publicación.'}), 403
     
-    # Eliminar todos los comentarios asociados a la publicación
-    if publicacion.tipo == 'publicacion':
-        for comentario in publicacion.comentarios:
-            db.session.delete(comentario)
-    
-    db.session.delete(publicacion)
-    db.session.commit()
-    flash('Tu publicación ha sido eliminada!', 'success')
-    return redirect(url_for('main.index'))
+    try:
+        with db.session.no_autoflush:
+            # Eliminar todos los comentarios asociados a la publicación
+            if publicacion.tipo == 'publicacion':
+                for comentario in publicacion.comentarios:
+                    db.session.delete(comentario)
+            
+            db.session.delete(publicacion)
+            db.session.commit()
+            return jsonify({'success': 'Tu publicación ha sido eliminada!'}), 200
 
-@main.route('/editar/<int:id>', methods=['GET', 'POST'])
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Error al eliminar la publicación: {}'.format(str(e))}), 500
+
+
+@main.route('/editar/<int:id>', methods=['GET', 'PUT'])
 @login_required
 def editar_publicacion(id):
     publicacion = Publicaciones.query.get_or_404(id)
@@ -93,11 +99,12 @@ def editar_publicacion(id):
         return redirect(url_for('main.index'))
     
     form = PublicacionForm()
-    if form.validate_on_submit():
+    if request.method == 'PUT' and form.validate_on_submit():
         publicacion.contenido = form.contenido.data
         db.session.commit()
-        flash('Tu publicación ha sido actualizada!', 'success')
-        return redirect(url_for('main.index'))
+        return jsonify({'success': 'Tu publicación ha sido actualizada!'}), 200
     elif request.method == 'GET':
         form.contenido.data = publicacion.contenido
-    return render_template('editar_publicacion.html', form=form)
+    return render_template('editar_publicacion.html', form=form, publicacion=publicacion)
+
+
