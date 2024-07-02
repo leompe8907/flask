@@ -5,8 +5,9 @@ from app.forms import RegistrationForm, LoginForm, PublicacionForm, ComentarioFo
 from app.models import Usuarios, Publicaciones
 from sqlalchemy.orm import session
 
-main = Blueprint('main', __name__)
+main = Blueprint('main', __name__) #organizar las rutas para que se puedan utilizar en el init
 
+# Se crea una instancia con el formulario del registro, se valida que el email ingresado no este ya en la DB, de ser asi te regresa un mensaje de error, si el correo es nuevo guarda los datos en la DB y te redirige al login
 @main.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
@@ -22,6 +23,8 @@ def register():
         return redirect(url_for('main.login'))
     return render_template('register.html', form=form)
 
+
+#si el usuario ya esta autenticado te redirige al home sino te hace sa solicitud del correo y la contraseña la valida y despues te redirige al home, en caso que no coincidan los datos no te dejara avanzar
 @main.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -38,12 +41,16 @@ def login():
         return redirect(next_page) if next_page else redirect(url_for('main.index'))
     return render_template('login.html', form=form)
 
+
+#elimina la sesión
 @main.route('/logout')
 def logout():
     logout_user()
     flash('Te has deslogueado exitosamente.', 'success')
     return redirect(url_for('main.index'))
 
+
+#se crea una instancia del formulario de publicidad y si el usuario esta autenticado te permite crear una publicación y la almacena en la DB con el id del que la creo, nombre, texto, tipo, fecha
 @main.route('/', methods=['GET', 'POST'])
 def index():
     form = PublicacionForm()
@@ -56,6 +63,8 @@ def index():
     publicaciones = Publicaciones.query.filter_by(tipo='publicacion').order_by(Publicaciones.date.desc()).all()
     return render_template('index.html', form=form, publicaciones=publicaciones)
 
+
+# se crea una instancia en el formulario de comentario y si se envia la información en el formulario de forma correcta, se realiza la solicitud post para crear la publicidad tipo comentario
 @main.route('/comentar/<int:publicacion_id>', methods=['POST'])
 @login_required
 def comentar(publicacion_id):
@@ -67,6 +76,8 @@ def comentar(publicacion_id):
         return jsonify({"success": "Tu comentario ha sido publicado"}), 200
     return jsonify({"error": "Error al validar el formulario"}), 400
 
+
+#se obtiene el id de la publicidad, después se iteran en la tabla de publicidades hasta encontrar el id para eliminarlos y también a todos los comentarios que tengan relación con este id
 @main.route('/eliminar/<int:id>', methods=['DELETE'])
 @login_required
 def eliminar_publicacion(id):
@@ -89,7 +100,7 @@ def eliminar_publicacion(id):
         db.session.rollback()
         return jsonify({'error': 'Error al eliminar la publicación: {}'.format(str(e))}), 500
 
-
+# se obtiene el id de la publicidad y después se verifica si la persona logueada es el mismo que creo la publicidad de serlo se habilitara la opción de poder editarla atravez de un método PUT
 @main.route('/editar/<int:id>', methods=['GET', 'PUT'])
 @login_required
 def editar_publicacion(id):
